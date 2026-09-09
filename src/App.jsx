@@ -34,9 +34,9 @@ export default function App() {
           );
         }
 
-        // Endpoint da GNews API (lang=pt para buscar notícias em português, ou lang=en para inglês)
+        const targetUrl = `https://gnews.io/api/v4/top-headlines?category=${category}&lang=pt&apikey=${API_KEY}`;
         const response = await fetch(
-          `https://gnews.io/api/v4/top-headlines?category=${category}&lang=pt&apikey=${API_KEY}`,
+          `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
         );
 
         const data = await response.json();
