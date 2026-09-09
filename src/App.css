@@ -290,6 +290,7 @@ body {
   padding: 8px 14px;
   border-radius: 980px;
   border: 1px solid rgba(0, 0, 0, 0.12);
+  color: var(--accent-blue);
   background: #ffffff;
   font-size: 13px;
   outline: none;
