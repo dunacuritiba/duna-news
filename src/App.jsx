@@ -4,7 +4,7 @@ import { AlertCircle, FolderGit2 } from "lucide-react";
 import "./App.css";
 import dunaLogo from "./assets/286461205.png";
 
-const API_KEY = "0ad6c90eef0747d4a3e16dd051a64e9f";
+const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
 
 export default function App() {
   const [articles, setArticles] = useState([]);
