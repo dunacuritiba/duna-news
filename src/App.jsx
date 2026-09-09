@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { NewsCard } from "./components/NewsCard";
 import { AlertCircle, FolderGit2 } from "lucide-react";
 import "./App.css";
-import dunaLogo from "./assets/286461205.png";
+import dunaLogo from './assets/286461205.png';
 
 export default function App() {
   const [articles, setArticles] = useState([]);
@@ -10,14 +10,13 @@ export default function App() {
   const [error, setError] = useState(null);
   const [category, setCategory] = useState("TECHNOLOGY");
 
-  // Mapeamento de tópicos suportados pelo Google News (em português)
   const categories = [
     { label: "Tecnologia", value: "TECHNOLOGY" },
     { label: "Negócios", value: "BUSINESS" },
     { label: "Esportes", value: "SPORTS" },
     { label: "Entretenimento", value: "ENTERTAINMENT" },
     { label: "Saúde", value: "HEALTH" },
-    { label: "Ciência", value: "SCIENCE" },
+    { label: "Ciência", value: "SCIENCE" }
   ];
 
   useEffect(() => {
@@ -26,10 +25,7 @@ export default function App() {
       setError(null);
 
       try {
-        // Feed do Google News Brasil para o tópico selecionado
         const rssUrl = `https://news.google.com/rss/headlines/section/topic/${category}?hl=pt-BR&gl=BR&ceid=BR:pt-419`;
-
-        // Conversor gratuito de RSS para JSON (sem bloqueio de CORS no GitHub Pages)
         const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
 
         const response = await fetch(apiUrl);
@@ -42,7 +38,6 @@ export default function App() {
 
         if (data.status === "ok" && data.items) {
           const formattedNews = data.items.map((item, index) => {
-            // Tenta extrair o veículo original da fonte ou usa o próprio link
             let domain = "news.google.com";
             try {
               domain = new URL(item.link).hostname;
@@ -50,11 +45,19 @@ export default function App() {
               // mantém o domínio padrão
             }
 
-            // Tenta resgatar a primeira imagem presente no conteúdo HTML da notícia
-            const imgMatch = item.description
-              ? item.description.match(/src="([^"]+)"/)
-              : null;
-            const fallbackImage = `https://picsum.photos/seed/${index + Date.now()}/600/350`;
+            // Busca a imagem real dentro do enclosure, thumbnail ou tags da descrição
+            let realImage = null;
+
+            if (item.enclosure && item.enclosure.link) {
+              realImage = item.enclosure.link;
+            } else if (item.thumbnail) {
+              realImage = item.thumbnail;
+            } else if (item.description) {
+              const imgMatch = item.description.match(/src="([^"]+)"/);
+              if (imgMatch) {
+                realImage = imgMatch[1];
+              }
+            }
 
             return {
               id: item.guid || item.link || index,
@@ -66,10 +69,8 @@ export default function App() {
               }),
               category: category.charAt(0) + category.slice(1).toLowerCase(),
               title: item.title,
-              description: item.description
-                ? item.description.replace(/<[^>]*>?/gm, "")
-                : item.title, // Limpa tags HTML
-              image: imgMatch ? imgMatch[1] : fallbackImage,
+              description: item.description ? item.description.replace(/<[^>]*>?/gm, '') : item.title,
+              image: realImage, // Passa a imagem real ou null (sem fallback aleatório)
               url: item.link,
               likes: Math.floor(Math.random() * 80) + 12,
               comments: [],
@@ -93,7 +94,6 @@ export default function App() {
 
   return (
     <div>
-      {/* Header estilo Apple */}
       <header className="apple-header">
         <div className="header-container">
           <div className="brand">
@@ -119,7 +119,6 @@ export default function App() {
       </header>
 
       <main className="main-container">
-        {/* Filtros em pílula */}
         <div className="category-filter">
           {categories.map((cat) => (
             <button
@@ -132,7 +131,6 @@ export default function App() {
           ))}
         </div>
 
-        {/* Estado de Carregamento */}
         {loading && (
           <div className="state-container">
             <div className="spinner"></div>
@@ -140,7 +138,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Estado de Erro */}
         {error && (
           <div className="state-container">
             <AlertCircle color="#ff2d55" style={{ marginBottom: 8 }} />
@@ -148,7 +145,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Feed de Notícias */}
         {!loading && !error && (
           <div>
             {articles.length > 0 ? (
