@@ -29,45 +29,55 @@ export default function App() {
 
       try {
         if (!API_KEY) {
-          throw new Error(
-            "Chave da API não configurada. Verifique seu arquivo .env.",
-          );
+          throw new Error("Chave da API não configurada no arquivo .env");
         }
 
         const targetUrl = `https://gnews.io/api/v4/top-headlines?category=${category}&lang=pt&apikey=${API_KEY}`;
-        const response = await fetch(
-          `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-        );
 
-        const data = await response.json();
+        // Utilizando o proxy allorigins (mais estável para respostas JSON)
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
 
-        if (response.ok && data.articles) {
+        const response = await fetch(proxyUrl);
+
+        if (!response.ok) {
+          throw new Error(`Erro na rede: ${response.statusText}`);
+        }
+
+        const wrapperData = await response.json();
+
+        // O allorigins retorna o JSON da API dentro da propriedade 'contents' como string
+        const data = JSON.parse(wrapperData.contents);
+
+        if (data.errors) {
+          throw new Error(data.errors[0]);
+        }
+
+        if (data.articles) {
           const formattedNews = data.articles
             .filter((article) => article.title && article.image)
             .map((article, index) => {
-              // Extrai o domínio a partir da URL da notícia ou da URL da fonte
               let domain = "google.com";
               try {
                 domain = new URL(article.url || article.source.url).hostname;
               } catch {
-                // mantém valor padrão
+                // domínio padrão
               }
-
-              // Favicon via serviço oficial do Google
-              const logoUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
               return {
                 id: article.url || index,
                 author: article.source.name || "Fonte Desconhecida",
-                avatar: logoUrl,
+                avatar: `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
                 time: new Date(article.publishedAt).toLocaleTimeString(
                   "pt-BR",
-                  { hour: "2-digit", minute: "2-digit" },
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  },
                 ),
                 category: category.charAt(0).toUpperCase() + category.slice(1),
                 title: article.title,
                 description: article.description,
-                image: article.image, // GNews usa 'image' em vez de 'urlToImage'
+                image: article.image,
                 url: article.url,
                 likes: Math.floor(Math.random() * 80) + 12,
                 comments: [],
@@ -77,12 +87,10 @@ export default function App() {
 
           setArticles(formattedNews);
         } else {
-          throw new Error(
-            data.errors ? data.errors[0] : "Erro ao carregar notícias.",
-          );
+          setArticles([]);
         }
       } catch (err) {
-        setError(err.message);
+        setError(err.message || "Erro ao carregar notícias.");
       } finally {
         setLoading(false);
       }
