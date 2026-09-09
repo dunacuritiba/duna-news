@@ -4,22 +4,20 @@ import { AlertCircle, FolderGit2 } from "lucide-react";
 import "./App.css";
 import dunaLogo from "./assets/286461205.png";
 
-const API_KEY = import.meta.env.VITE_NEWS_API_KEY;
-
 export default function App() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [category, setCategory] = useState("technology");
+  const [category, setCategory] = useState("TECHNOLOGY");
 
-  // Mapeamento de categorias suportadas pela GNews API
+  // Mapeamento de tópicos suportados pelo Google News (em português)
   const categories = [
-    { label: "Tecnologia", value: "technology" },
-    { label: "Negócios", value: "business" },
-    { label: "Esportes", value: "sports" },
-    { label: "Entretenimento", value: "entertainment" },
-    { label: "Saúde", value: "health" },
-    { label: "Ciência", value: "science" },
+    { label: "Tecnologia", value: "TECHNOLOGY" },
+    { label: "Negócios", value: "BUSINESS" },
+    { label: "Esportes", value: "SPORTS" },
+    { label: "Entretenimento", value: "ENTERTAINMENT" },
+    { label: "Saúde", value: "HEALTH" },
+    { label: "Ciência", value: "SCIENCE" },
   ];
 
   useEffect(() => {
@@ -28,66 +26,60 @@ export default function App() {
       setError(null);
 
       try {
-        if (!API_KEY) {
-          throw new Error("Chave da API não configurada no arquivo .env");
-        }
+        // Feed do Google News Brasil para o tópico selecionado
+        const rssUrl = `https://news.google.com/rss/headlines/section/topic/${category}?hl=pt-BR&gl=BR&ceid=BR:pt-419`;
 
-        const targetUrl = `https://gnews.io/api/v4/top-headlines?category=${category}&lang=pt&apikey=${API_KEY}`;
+        // Conversor gratuito de RSS para JSON (sem bloqueio de CORS no GitHub Pages)
+        const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
 
-        // Utilizando o proxy allorigins (mais estável para respostas JSON)
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-
-        const response = await fetch(proxyUrl);
+        const response = await fetch(apiUrl);
 
         if (!response.ok) {
-          throw new Error(`Erro na rede: ${response.statusText}`);
+          throw new Error("Não foi possível conectar ao servidor de notícias.");
         }
 
-        const wrapperData = await response.json();
+        const data = await response.json();
 
-        // O allorigins retorna o JSON da API dentro da propriedade 'contents' como string
-        const data = JSON.parse(wrapperData.contents);
+        if (data.status === "ok" && data.items) {
+          const formattedNews = data.items.map((item, index) => {
+            // Tenta extrair o veículo original da fonte ou usa o próprio link
+            let domain = "news.google.com";
+            try {
+              domain = new URL(item.link).hostname;
+            } catch {
+              // mantém o domínio padrão
+            }
 
-        if (data.errors) {
-          throw new Error(data.errors[0]);
-        }
+            // Tenta resgatar a primeira imagem presente no conteúdo HTML da notícia
+            const imgMatch = item.description
+              ? item.description.match(/src="([^"]+)"/)
+              : null;
+            const fallbackImage = `https://picsum.photos/seed/${index + Date.now()}/600/350`;
 
-        if (data.articles) {
-          const formattedNews = data.articles
-            .filter((article) => article.title && article.image)
-            .map((article, index) => {
-              let domain = "google.com";
-              try {
-                domain = new URL(article.url || article.source.url).hostname;
-              } catch {
-                // domínio padrão
-              }
-
-              return {
-                id: article.url || index,
-                author: article.source.name || "Fonte Desconhecida",
-                avatar: `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-                time: new Date(article.publishedAt).toLocaleTimeString(
-                  "pt-BR",
-                  {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  },
-                ),
-                category: category.charAt(0).toUpperCase() + category.slice(1),
-                title: article.title,
-                description: article.description,
-                image: article.image,
-                url: article.url,
-                likes: Math.floor(Math.random() * 80) + 12,
-                comments: [],
-                isLiked: false,
-              };
-            });
+            return {
+              id: item.guid || item.link || index,
+              author: item.author || "Google News",
+              avatar: `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+              time: new Date(item.pubDate).toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              category: category.charAt(0) + category.slice(1).toLowerCase(),
+              title: item.title,
+              description: item.description
+                ? item.description.replace(/<[^>]*>?/gm, "")
+                : item.title, // Limpa tags HTML
+              image: imgMatch ? imgMatch[1] : fallbackImage,
+              url: item.link,
+              likes: Math.floor(Math.random() * 80) + 12,
+              comments: [],
+              isLiked: false,
+            };
+          });
 
           setArticles(formattedNews);
         } else {
-          setArticles([]);
+          throw new Error("Nenhuma notícia encontrada no momento.");
         }
       } catch (err) {
         setError(err.message || "Erro ao carregar notícias.");
@@ -101,7 +93,7 @@ export default function App() {
 
   return (
     <div>
-      {/* Header com estilo Glassmorphism e Link para o GitHub */}
+      {/* Header estilo Apple */}
       <header className="apple-header">
         <div className="header-container">
           <div className="brand">
@@ -114,7 +106,7 @@ export default function App() {
           </div>
 
           <a
-            href="https://github.com" // Substitua pela URL do seu repositório no GitHub
+            href="https://github.com/dunacuritiba/duna-news"
             target="_blank"
             rel="noopener noreferrer"
             className="github-btn"
@@ -127,7 +119,7 @@ export default function App() {
       </header>
 
       <main className="main-container">
-        {/* Filtros em formato de pílulas */}
+        {/* Filtros em pílula */}
         <div className="category-filter">
           {categories.map((cat) => (
             <button
@@ -144,7 +136,7 @@ export default function App() {
         {loading && (
           <div className="state-container">
             <div className="spinner"></div>
-            <p>Atualizando o feed...</p>
+            <p>Atualizando o feed do Duna News...</p>
           </div>
         )}
 
