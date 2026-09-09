@@ -2,7 +2,7 @@
 
 **Duna News** é uma aplicação web moderna que exibe as principais notícias do momento no formato de **feed de rede social**, inspirada no *Design System* minimalista e elegante da **Apple**.
 
-> ⚡ **Consumo de Dados em Tempo Real:** Todas as notícias exibidas na plataforma são fornecidas e atualizadas em tempo real via [NewsAPI.org](https://newsapi.org/).
+> ⚡ **Consumo de Dados em Tempo Real:** Todas as notícias exibidas na plataforma são fornecidas em tempo real via [GNews API](https://gnews.io/).
 
 ---
 
@@ -24,7 +24,7 @@
 - **[Vite](https://vitejs.dev/)** — Build tool ultra-rápida para desenvolvimento front-end.
 - **[CSS3 NATIVO](https://developer.mozilla.org/pt-BR/docs/Web/CSS)** — Estilização personalizada com variáveis CSS e efeito *Glassmorphism*.
 - **[Lucide React](https://lucide.dev/)** — Coleção de ícones modernos e leves.
-- **[NewsAPI](https://newsapi.org/)** — API REST para busca de notícias em tempo real.
+- **[GNews API](https://gnews.io/)** — API REST para busca de notícias globais e locais em tempo real.
 
 ---
 

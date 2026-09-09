@@ -12,6 +12,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [category, setCategory] = useState("technology");
 
+  // Mapeamento de categorias suportadas pela GNews API
   const categories = [
     { label: "Tecnologia", value: "technology" },
     { label: "Negócios", value: "business" },
@@ -27,29 +28,38 @@ export default function App() {
       setError(null);
 
       try {
+        if (!API_KEY) {
+          throw new Error(
+            "Chave da API não configurada. Verifique seu arquivo .env.",
+          );
+        }
+
+        // Endpoint da GNews API (lang=pt para buscar notícias em português, ou lang=en para inglês)
         const response = await fetch(
-          `https://newsapi.org/v2/top-headlines?country=us&category=${category}&apiKey=${API_KEY}`,
+          `https://gnews.io/api/v4/top-headlines?category=${category}&lang=pt&apikey=${API_KEY}`,
         );
 
         const data = await response.json();
 
-        if (data.status === "ok") {
+        if (response.ok && data.articles) {
           const formattedNews = data.articles
-            .filter((article) => article.title && article.urlToImage)
+            .filter((article) => article.title && article.image)
             .map((article, index) => {
+              // Extrai o domínio a partir da URL da notícia ou da URL da fonte
               let domain = "google.com";
               try {
-                domain = new URL(article.url).hostname;
+                domain = new URL(article.url || article.source.url).hostname;
               } catch {
-                // domain já tem valor padrão "google.com"
+                // mantém valor padrão
               }
 
+              // Favicon via serviço oficial do Google
               const logoUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 
               return {
                 id: article.url || index,
                 author: article.source.name || "Fonte Desconhecida",
-                avatar: logoUrl, // Agora usa a logo real do site!
+                avatar: logoUrl,
                 time: new Date(article.publishedAt).toLocaleTimeString(
                   "pt-BR",
                   { hour: "2-digit", minute: "2-digit" },
@@ -57,7 +67,7 @@ export default function App() {
                 category: category.charAt(0).toUpperCase() + category.slice(1),
                 title: article.title,
                 description: article.description,
-                image: article.urlToImage,
+                image: article.image, // GNews usa 'image' em vez de 'urlToImage'
                 url: article.url,
                 likes: Math.floor(Math.random() * 80) + 12,
                 comments: [],
@@ -67,7 +77,9 @@ export default function App() {
 
           setArticles(formattedNews);
         } else {
-          throw new Error(data.message || "Erro ao carregar notícias.");
+          throw new Error(
+            data.errors ? data.errors[0] : "Erro ao carregar notícias.",
+          );
         }
       } catch (err) {
         setError(err.message);
@@ -81,6 +93,7 @@ export default function App() {
 
   return (
     <div>
+      {/* Header com estilo Glassmorphism e Link para o GitHub */}
       <header className="apple-header">
         <div className="header-container">
           <div className="brand">
@@ -91,8 +104,9 @@ export default function App() {
             />
             <h1>Duna News</h1>
           </div>
+
           <a
-            href="https://github.com/dunacuritiba/duna-news"
+            href="https://github.com" // Substitua pela URL do seu repositório no GitHub
             target="_blank"
             rel="noopener noreferrer"
             className="github-btn"
@@ -105,6 +119,7 @@ export default function App() {
       </header>
 
       <main className="main-container">
+        {/* Filtros em formato de pílulas */}
         <div className="category-filter">
           {categories.map((cat) => (
             <button
@@ -117,6 +132,7 @@ export default function App() {
           ))}
         </div>
 
+        {/* Estado de Carregamento */}
         {loading && (
           <div className="state-container">
             <div className="spinner"></div>
@@ -124,6 +140,7 @@ export default function App() {
           </div>
         )}
 
+        {/* Estado de Erro */}
         {error && (
           <div className="state-container">
             <AlertCircle color="#ff2d55" style={{ marginBottom: 8 }} />
@@ -131,6 +148,7 @@ export default function App() {
           </div>
         )}
 
+        {/* Feed de Notícias */}
         {!loading && !error && (
           <div>
             {articles.length > 0 ? (
